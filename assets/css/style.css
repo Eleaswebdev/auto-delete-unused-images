@@ -1,0 +1,14 @@
+/* Admin styles */
+#results {
+    margin-top: 20px;
+}
+
+#results div {
+    margin-bottom: 10px;
+}
+
+#results img {
+    max-width: 200px;
+    width: 100%;
+    margin-right: 10px;
+}
