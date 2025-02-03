@@ -1,7 +1,8 @@
 <?php
 
 class Auto_Delete_Unused_Images_Database_Handler {
-    // Get unused images from the database
+   
+    // Scan for unused images
     public function get_unused_images() {
         global $wpdb;
 
@@ -25,7 +26,7 @@ class Auto_Delete_Unused_Images_Database_Handler {
     // Check if the image is used anywhere
     private function check_image_usage($image) {
         global $wpdb;
-    
+
         // Check if the image is used in the current content, excerpt, custom fields, or as a featured image
         $is_used = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) 
@@ -46,7 +47,7 @@ class Auto_Delete_Unused_Images_Database_Handler {
             '%' . $wpdb->esc_like($image->guid) . '%',  // Custom field check
             $image->ID                                 // Featured image check
         ));
-    
+
         // If the image is not used in the current content, check if it is used in Elementor's metadata
         if ($is_used == 0) {
             $is_used_in_elementor = $wpdb->get_var($wpdb->prepare(
@@ -59,12 +60,12 @@ class Auto_Delete_Unused_Images_Database_Handler {
                 '%' . $wpdb->esc_like($image->guid) . '%',  // Elementor CSS check
                 '%' . $wpdb->esc_like($image->guid) . '%'   // Elementor page settings check
             ));
-    
+
             if ($is_used_in_elementor > 0) {
                 $is_used = 1;
             }
         }
-    
+
         // If the image is still not used, check if it was used in revisions
         if ($is_used == 0) {
             $is_used_in_revisions = $wpdb->get_var($wpdb->prepare(
@@ -75,21 +76,51 @@ class Auto_Delete_Unused_Images_Database_Handler {
                 '%' . $wpdb->esc_like($image->guid) . '%',  // Revision content check
                 '%' . $wpdb->esc_like($image->guid) . '%'   // Revision excerpt check
             ));
-    
+
             // If the image is used in revisions, mark it as used
             if ($is_used_in_revisions > 0) {
                 $is_used = 1;
             }
         }
-    
+
+        // If the image is still not used, check for orphaned metadata
+        if ($is_used == 0) {
+            $is_orphaned = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) 
+                 FROM {$wpdb->postmeta} 
+                 WHERE meta_key = '_wp_attached_file' 
+                 AND meta_value LIKE %s
+                 AND post_id NOT IN (
+                     SELECT ID 
+                     FROM {$wpdb->posts} 
+                     WHERE post_type = 'attachment'
+                 )",
+                '%' . $wpdb->esc_like($image->guid) . '%'  // Orphaned metadata check
+            ));
+
+            // If the image is orphaned, mark it as unused
+            if ($is_orphaned > 0) {
+                $is_used = 0;
+            }
+        }
+
         return $is_used;
     }
-    
 
-    // Delete images from the database
-    public function delete_images($image_ids) {
+    // Delete selected images
+    public function delete_unused_images($image_ids) {
+        check_ajax_referer('unused_images_nonce', 'security');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized access.');
+        }
+
+        $image_ids = isset($_POST['image_ids']) ? array_map('intval', $_POST['image_ids']) : array();
+
         foreach ($image_ids as $image_id) {
             wp_delete_attachment($image_id, true);
         }
+
+        wp_send_json_success('Selected images deleted successfully.');
     }
 }

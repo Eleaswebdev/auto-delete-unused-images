@@ -49,7 +49,7 @@ class Auto_Delete_Unused_Images_Admin_Settings {
         
         $image_ids = isset($_POST['image_ids']) ? array_map('intval', $_POST['image_ids']) : array();
         $database_handler = new Auto_Delete_Unused_Images_Database_Handler();
-        $database_handler->delete_images($image_ids);
+        $database_handler->delete_unused_images($image_ids);
         wp_send_json_success('Selected images deleted successfully.');
     }
 }
