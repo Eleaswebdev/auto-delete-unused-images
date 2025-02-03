@@ -25,6 +25,6 @@ require_once ADUI_PLUGIN_DIR . 'includes/class-loader.php';
 //require_once plugin_dir_path(__FILE__) . 'includes/class-loader.php';
 
 // Initialize the loader
-Auto_Delete_Unused_Images_Loader::init();
+ADUI_Loader::init();
 
 

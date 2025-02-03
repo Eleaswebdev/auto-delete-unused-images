@@ -1,6 +1,6 @@
 <?php
 
-class Auto_Delete_Unused_Images_Activator {
+class ADUI_Activator {
     public static function activate() {
       
     }

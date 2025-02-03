@@ -1,6 +1,6 @@
 <?php
 
-class Auto_Delete_Unused_Images_Assets {
+class ADUI_Assets {
     public function __construct() {
         add_action('admin_enqueue_scripts', array($this, 'load_assets'));
     }

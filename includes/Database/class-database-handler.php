@@ -1,6 +1,6 @@
 <?php
 
-class Auto_Delete_Unused_Images_Database_Handler {
+class ADUI_Database_Handler {
    
     // Scan for unused images
     public function get_unused_images() {
