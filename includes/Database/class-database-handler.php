@@ -26,78 +26,47 @@ class ADUI_Database_Handler {
     // Check if the image is used anywhere
     private function check_image_usage($image) {
         global $wpdb;
+        $image_id = $image->ID;
+        $image_url = wp_get_attachment_url($image_id);
     
-        // Check if image is used in any published post (excluding revisions)
-        $is_used = $wpdb->get_var($wpdb->prepare(
+        // Check Block Editor, Post, Page, Excerpt, Featured Image
+        $is_used_in_posts = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) 
              FROM {$wpdb->posts} 
              WHERE post_type NOT IN ('revision') 
              AND (post_content LIKE %s OR post_excerpt LIKE %s)
              OR ID IN (
-                 SELECT post_id 
-                 FROM {$wpdb->postmeta} 
-                 WHERE meta_value = %d
+                 SELECT post_id FROM {$wpdb->postmeta} WHERE meta_value = %d
              )
              OR ID IN (
-                 SELECT post_id 
-                 FROM {$wpdb->postmeta} 
-                 WHERE meta_key = '_thumbnail_id' AND meta_value = %d
+                 SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_thumbnail_id' AND meta_value = %d
              )",
-            '%' . $wpdb->esc_like('"id":' . $image->ID) . '%',  // Matches Gutenberg image ID format
-            '%' . $wpdb->esc_like('"id":' . $image->ID) . '%',  
-            $image->ID,
-            $image->ID
+            '%' . $wpdb->esc_like('"id":' . $image_id) . '%',
+            '%' . $wpdb->esc_like('"id":' . $image_id) . '%',
+            $image_id,
+            $image_id
         ));
+    
+        // Check Elementor Metadata
+        $escaped_image_url = str_replace('/', '\/', $image_url);
+        $is_used_in_elementor = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) 
+             FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+             WHERE p.post_status = 'publish' 
+             AND pm.meta_key = '_elementor_data' 
+             AND (pm.meta_value LIKE %s OR pm.meta_value REGEXP %s)",
+            '%"id":"' . $image_id . '"%',
+            '"url":"[^"]*' . $wpdb->esc_like($escaped_image_url) . '[^"]*"'
+        ));
+    
+        // Determine final usage status
+        $is_used = ($is_used_in_posts > 0 || $is_used_in_elementor > 0) ? 1 : 0;
 
-
-        // Check Elementor metadata (if Elementor is in use)
-        if ($is_used == 0) {
-            // Initialize the variable before using it
-            $is_used_in_elementor = 0; // Set default value
-            
-            // Query Elementor data for the image reference
-            $is_used_in_elementor = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) 
-                 FROM {$wpdb->postmeta} 
-                 WHERE (meta_key = '_elementor_data' AND meta_value LIKE %s)
-                 OR (meta_key = '_elementor_css' AND meta_value LIKE %s)
-                 OR (meta_key = '_elementor_page_settings' AND meta_value LIKE %s)",
-                '%' . $wpdb->esc_like($image->guid) . '%',  // Check against the image GUID
-                '%' . $wpdb->esc_like($image->guid) . '%',  // Check in Elementor's CSS metadata
-                '%' . $wpdb->esc_like($image->guid) . '%'   // Check in Elementor's page settings
-            ));
-        
-            // Also check for the image URL within the serialized JSON in Elementor's postmeta
-            if ($is_used_in_elementor == 0) {
-                $image_url = wp_get_attachment_url($image->ID);  // Get the URL of the image
-                
-                // Query Elementor data for the image URL inside the widget settings
-                $is_used_in_elementor = $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) 
-                     FROM {$wpdb->postmeta} 
-                     WHERE (meta_key = '_elementor_data' AND meta_value LIKE %s)",
-                    '%' . $wpdb->esc_like($image_url) . '%'
-                ));
-            }
-            // Log the result for debugging
-            error_log('Elementor usage check: ' . print_r($is_used_in_elementor, true));
-            
-            // If the image is used in Elementor, mark it as used
-            if ($is_used_in_elementor > 0) {
-                $is_used = 1;
-            }
-        }
-        
-        
-
-      
-
-        
-
-        
     
         return $is_used;
     }
+    
     
     
     
