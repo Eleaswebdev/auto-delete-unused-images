@@ -1,6 +1,6 @@
 <?php
 
-class ADUI_Activator {
+class UIC_Activator {
     public static function activate() {
       
     }

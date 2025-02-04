@@ -8,9 +8,36 @@
 }
 
 #results img {
-    max-width: 150px;
-    width: 100%;
     height: auto;
-    max-height: 150px;
     margin-right: 10px;
+}
+
+.unused-images-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.unused-images-table th, .unused-images-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+
+.unused-images-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+.unused-images-table img {
+    border-radius: 8px;
+}
+
+.unused-images-table button {
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+#select-all {
+    cursor: pointer;
 }

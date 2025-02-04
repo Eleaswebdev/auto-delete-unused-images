@@ -1,6 +1,6 @@
 <?php
 
-class ADUI_Deactivator {
+class UIC_Deactivator {
     public static function deactivate() {
         
     }

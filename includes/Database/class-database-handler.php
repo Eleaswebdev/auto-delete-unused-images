@@ -1,14 +1,18 @@
 <?php
 
-class ADUI_Database_Handler {
-   
+class UIC_Database_Handler {
     // Scan for unused images
     public function get_unused_images() {
         global $wpdb;
 
         // Query to get all images in the media library
-        $query = "SELECT ID, guid FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%'";
-        $results = $wpdb->get_results($query);
+        $query = $wpdb->prepare(
+            "SELECT ID, guid FROM {$wpdb->posts} WHERE post_type = %s AND post_mime_type LIKE %s",
+            'attachment',
+            'image/%'
+        );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $results = $wpdb->get_results($query); 
 
         $unused_images = array();
         foreach ($results as $image) {
@@ -67,11 +71,6 @@ class ADUI_Database_Handler {
         return $is_used;
     }
     
-    
-    
-    
-    
-
     // Delete selected images
     public function delete_unused_images($image_ids) {
         check_ajax_referer('unused_images_nonce', 'security');
